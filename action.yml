@@ -1,0 +1,32 @@
+inputs:
+  install-path:
+    description: |
+      The path to install PHPStan binary to.
+    required: true
+  version:
+    description: |
+      The target PHPStan version to install.
+
+      Possible values:
+      - exact versions (8.0.11, 7.4.24, etc.)
+    required: false
+    default: latest
+  path:
+    description: |
+      Path to an existing PHPStan installation.
+    required: false
+    default: ""
+
+outputs:
+  phpstan:
+    description: Path to PHPStan executable
+
+name: Setup PHPStan
+description: GitHub action for setting up PHPStan in an actions enviroment.
+author: NxtLvLSoftware Solutions
+branding:
+  icon: settings
+  color: blue
+runs:
+  using: node12
+  main: dist/main.js
