@@ -91,7 +91,7 @@ export async function run(): Promise<void> {
 	const RestOctokit = Octokit.plugin(restEndpointMethods);
 	const gitHubApi = new RestOctokit();
 
-	const release = await findVersion(gitHubApi, getInput("target"));
+	const release = await findVersion(gitHubApi, getInput("version"));
 	const asset = findAsset(release.assets, "phpstan.phar");
 	debug(`Using target version ${release.tag_name} released @ ${release.published_at}`);
 
