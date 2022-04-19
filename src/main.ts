@@ -5,6 +5,7 @@ import { downloadRelease } from "@terascope/fetch-github-release";
 import {RestEndpointMethodTypes} from "@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types";
 import * as cache from "@actions/cache"
 import * as path from "path"
+import * as fs from "fs"
 
 /**
  * Find a PHPStan release given a version.
@@ -100,6 +101,7 @@ export async function run(): Promise<void> {
 	const hitKey = cache.restoreCache([restorePath + "/phpstan.phar"], cacheKey);
 	let phpStanBin: string;
 	if (hitKey === undefined) {
+		fs.mkdirSync(restorePath, { recursive: true });
 		phpStanBin = await install(release.id, asset, restorePath, cacheKey);
 		info("Downloaded phpstan.phar to " + phpStanBin);
 	} else {
