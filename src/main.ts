@@ -1,4 +1,4 @@
-import {addPath, debug, getInput, setFailed, setOutput} from "@actions/core"
+import {addPath, info, getInput, setFailed, setOutput} from "@actions/core"
 import { Octokit } from "@octokit/action";
 import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
 import { downloadRelease } from "@terascope/fetch-github-release";
@@ -93,7 +93,7 @@ export async function run(): Promise<void> {
 
 	const release = await findVersion(gitHubApi, getInput("version"));
 	const asset = findAsset(release.assets, "phpstan.phar");
-	debug(`Using target version ${release.tag_name} released @ ${release.published_at}`);
+	info(`Using target version ${release.tag_name} released @ ${release.published_at}`);
 
 	const restorePath = path.resolve(getInput("install-path"));
 	const cacheKey = "setup-phpstan-v1-" + asset.id + "-phpstan.phar";
@@ -101,8 +101,10 @@ export async function run(): Promise<void> {
 	let phpStanBin: string;
 	if (hitKey === undefined) {
 		phpStanBin = await install(release.id, asset, restorePath, cacheKey);
+		info("Downloaded phpstan.phar to " + phpStanBin);
 	} else {
 		phpStanBin = restorePath + "/phpstan.phar";
+		info("Using cached phpstan.phar, restored to " + phpStanBin);
 	}
 
 	setOutput("phpstan", phpStanBin)
