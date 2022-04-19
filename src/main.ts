@@ -96,12 +96,13 @@ export async function run(): Promise<void> {
 	const asset = findAsset(release.assets, "phpstan.phar");
 	info(`Using target version ${release.tag_name} released @ ${release.published_at}`);
 
-	const restorePath = path.resolve(getInput("install-path"));
+	const restorePath = path.resolve(path.join(getInput("install-path"), "phpstan"));
 	const cacheKey = "setup-phpstan-v1-" + asset.id + "-phpstan.phar";
-	const hitKey = cache.restoreCache([path.join(restorePath, "phpstan.phar")], cacheKey);
+	const hitKey = cache.restoreCache([restorePath], cacheKey);
+
+	fs.mkdirSync(restorePath, { recursive: true });
 	let phpStanBin: string;
 	if (hitKey === undefined) {
-		fs.mkdirSync(restorePath, { recursive: true });
 		phpStanBin = await install(release.id, asset, restorePath, cacheKey);
 		info("Downloaded phpstan.phar to " + phpStanBin);
 	} else {
