@@ -72,17 +72,15 @@ function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"][
  * @param restorePath
  */
 async function install(releaseId: number, asset: ReleaseAsset, restorePath: string, cacheKey: string) : Promise<string> {
-	const downloadPath = path.join(restorePath, "phpstan.phar");
-
-	await downloadRelease("phpstan", "phpstan", downloadPath, (release) : boolean => {
+	await downloadRelease("phpstan", "phpstan", restorePath, (release) : boolean => {
 		return release.id === releaseId;
 	}, (releaseAsset) : boolean => {
 		return releaseAsset.id === asset.id;
 	}, false, true);
 
-	await cache.saveCache([downloadPath], cacheKey);
+	await cache.saveCache([restorePath], cacheKey);
 
-	return downloadPath;
+	return restorePath;
 }
 
 /**
@@ -101,12 +99,11 @@ export async function run(): Promise<void> {
 	const hitKey = cache.restoreCache([restorePath], cacheKey);
 
 	fs.mkdirSync(restorePath, { recursive: true });
-	let phpStanBin: string;
+	let phpStanBin = restorePath + "/phpstan.phar";
 	if (hitKey === undefined) {
-		phpStanBin = await install(release.id, asset, restorePath, cacheKey);
+		phpStanBin = await install(release.id, asset, restorePath, cacheKey) + "phpstan.phar";
 		info("Downloaded phpstan.phar to " + phpStanBin);
 	} else {
-		phpStanBin = restorePath + "/phpstan.phar";
 		info("Using cached phpstan.phar, restored to " + phpStanBin);
 	}
 
