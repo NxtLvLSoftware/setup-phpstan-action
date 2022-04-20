@@ -97,7 +97,7 @@ export async function run(): Promise<void> {
 	info(`Using target version ${release.tag_name} released @ ${release.published_at}`);
 
 	const restorePath = path.join(getInput("install-path"));
-	const cacheKey = "setup-phpstan-v1-" + asset.id + "-phpstan.phar";
+	const cacheKey = "setup-phpstan-v1-" + asset.id + restorePath.replace(/\//g, "-") + "-phpstan.phar";
 	const hitKey = cache.restoreCache([restorePath], cacheKey);
 
 	fs.mkdirSync(restorePath, { recursive: true });
