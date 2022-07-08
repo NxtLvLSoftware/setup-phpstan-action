@@ -79,7 +79,7 @@ async function install(releaseId: number, asset: ReleaseAsset, restorePath: stri
 			return release.id === releaseId;
 		}, (releaseAsset) : boolean => {
 			return releaseAsset.id === asset.id;
-		}, false, true);
+		}, false, false);
 
 		await cache.saveCache([restorePath], cacheKey);
 		info("Downloaded phpstan.phar to " + restorePath);
@@ -102,7 +102,7 @@ export async function run(): Promise<void> {
 	info(`Using target version ${release.tag_name} released @ ${release.published_at}`);
 
 	const restorePath = path.resolve(getInput("install-path"));
-	const cacheKey = "setup-phpstan-v1-" + asset.id + "-" + restorePath.replace(/\//g, "-") + "-phpstan.phar";
+	const cacheKey = `setup-phpstan-v1.1-${release.tag_name}-${asset.id}-` + restorePath.replace(/\//g, "-") + "-phpstan.phar";
 
 	fs.mkdirSync(restorePath, { recursive: true });
 	let phpStanBin = await install(release.id, asset, restorePath, cacheKey) + "phpstan.phar";
