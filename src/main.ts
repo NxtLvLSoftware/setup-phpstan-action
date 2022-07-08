@@ -94,7 +94,7 @@ export async function run(): Promise<void> {
 	const asset = findAsset(release.assets, "phpstan.phar");
 	info(`Using target version ${release.tag_name} released @ ${release.published_at}`);
 
-	const restorePath = path.join(getInput("install-path"));
+	const restorePath = path.resolve(getInput("install-path"));
 	const cacheKey = "setup-phpstan-v1-" + asset.id + restorePath.replace(/\//g, "-") + "-phpstan.phar";
 	const hitKey = cache.restoreCache([restorePath], cacheKey);
 
