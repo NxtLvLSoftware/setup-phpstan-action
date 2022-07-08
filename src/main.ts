@@ -65,20 +65,27 @@ function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"][
 }
 
 /**
- * Download a phpstan.phar executable from a release.
+ * Download or restore a cached phpstan.phar executable.
  *
  * @param releaseId
  * @param asset
  * @param restorePath
  */
 async function install(releaseId: number, asset: ReleaseAsset, restorePath: string, cacheKey: string) : Promise<string> {
-	await downloadRelease("phpstan", "phpstan", restorePath, (release) : boolean => {
-		return release.id === releaseId;
-	}, (releaseAsset) : boolean => {
-		return releaseAsset.id === asset.id;
-	}, false, true);
+	const hitKey = cache.restoreCache([restorePath], cacheKey);
 
-	await cache.saveCache([restorePath], cacheKey);
+	if (hitKey === undefined) {
+		await downloadRelease("phpstan", "phpstan", restorePath, (release) : boolean => {
+			return release.id === releaseId;
+		}, (releaseAsset) : boolean => {
+			return releaseAsset.id === asset.id;
+		}, false, true);
+
+		await cache.saveCache([restorePath], cacheKey);
+		info("Downloaded phpstan.phar to " + restorePath);
+	} else {
+		info("Using cached phpstan.phar, restored to " + restorePath);
+	}
 
 	return restorePath;
 }
@@ -95,17 +102,10 @@ export async function run(): Promise<void> {
 	info(`Using target version ${release.tag_name} released @ ${release.published_at}`);
 
 	const restorePath = path.resolve(getInput("install-path"));
-	const cacheKey = "setup-phpstan-v1-" + asset.id + restorePath.replace(/\//g, "-") + "-phpstan.phar";
-	const hitKey = cache.restoreCache([restorePath], cacheKey);
+	const cacheKey = "setup-phpstan-v1-" + asset.id + "-" + restorePath.replace(/\//g, "-") + "-phpstan.phar";
 
 	fs.mkdirSync(restorePath, { recursive: true });
-	let phpStanBin = restorePath + "/phpstan.phar";
-	if (hitKey === undefined) {
-		phpStanBin = await install(release.id, asset, restorePath, cacheKey) + "phpstan.phar";
-		info("Downloaded phpstan.phar to " + phpStanBin);
-	} else {
-		info("Using cached phpstan.phar, restored to " + phpStanBin);
-	}
+	let phpStanBin = await install(release.id, asset, restorePath, cacheKey) + "phpstan.phar";
 
 	setOutput("phpstan", phpStanBin)
 	addPath(path.dirname(phpStanBin))
