@@ -72,7 +72,7 @@ function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"][
  * @param restorePath
  */
 async function install(releaseId: number, asset: ReleaseAsset, restorePath: string, cacheKey: string) : Promise<string> {
-	const hitKey = cache.restoreCache([restorePath], cacheKey);
+	const hitKey = await cache.restoreCache([restorePath], cacheKey);
 
 	if (hitKey === undefined) {
 		await downloadRelease("phpstan", "phpstan", restorePath, (release) : boolean => {
