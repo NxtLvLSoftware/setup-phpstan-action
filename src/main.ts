@@ -7,6 +7,14 @@ import * as cache from "@actions/cache"
 import * as path from "path"
 import * as fs from "fs"
 
+const ACTION_NAME = "Setup PHPStan";
+const ACTION_VERSION = "1";
+const ACTION_OUT_PREFIX = `[${ACTION_NAME}]`;
+
+const GITHUB_REPO_OWNER = "phpstan";
+const GITHUB_REPO = "phpstan";
+const GITHUB_RELEASE_ASSET_NAME = "phpstan.phar";
+
 /**
  * Find a PHPStan release given a version.
  *
@@ -16,13 +24,13 @@ import * as fs from "fs"
 async function findVersion(gitHubApi: Octokit, target: string): Promise<RestEndpointMethodTypes["repos"]["getLatestRelease"]["response"]["data"]> {
 	if (target.match(/^\d+\.\d+\.\d+/)) {
 		const response = await gitHubApi.rest.repos.getReleaseByTag({
-			owner: "phpstan",
-			repo: "phpstan",
+			owner: GITHUB_REPO_OWNER,
+			repo: GITHUB_REPO,
 			tag: target
 		});
 
 		if(response.status !== 200) {
-			throw new Error("Could not find a phpstan/phpstan release with tag " + target);
+			throw new Error(`Could not find a ${GITHUB_REPO_OWNER}/${GITHUB_REPO} release with tag '${target}'`);
 		}
 
 		return response.data;
@@ -30,12 +38,12 @@ async function findVersion(gitHubApi: Octokit, target: string): Promise<RestEndp
 
 	if(target.toLowerCase() === "latest") {
 		const response = await gitHubApi.rest.repos.getLatestRelease({
-			owner: "phpstan",
-			repo: "phpstan"
+			owner: GITHUB_REPO_OWNER,
+			repo: GITHUB_REPO
 		});
 
 		if(response.status !== 200) {
-			throw new Error("Could not find latest phpstan/phpstan release");
+			throw new Error(`Could not find latest ${GITHUB_REPO_OWNER}/${GITHUB_REPO} release`);
 		}
 
 		return response.data;
@@ -58,7 +66,7 @@ function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"][
 	});
 
 	if(found === undefined) {
-		throw new Error("Could not find phpstan.phar asset in release");
+		throw new Error(`Could not find ${file} asset in release`);
 	}
 
 	return found;
@@ -75,16 +83,16 @@ async function install(releaseId: number, asset: ReleaseAsset, restorePath: stri
 	const hitKey = await cache.restoreCache([restorePath], cacheKey);
 
 	if (hitKey === undefined) {
-		await downloadRelease("phpstan", "phpstan", restorePath, (release) : boolean => {
+		await downloadRelease(GITHUB_REPO_OWNER, GITHUB_REPO, restorePath, (release) : boolean => {
 			return release.id === releaseId;
 		}, (releaseAsset) : boolean => {
 			return releaseAsset.id === asset.id;
 		}, false, false);
 
 		await cache.saveCache([restorePath], cacheKey);
-		info("Downloaded phpstan.phar to " + restorePath);
+		info(`${ACTION_OUT_PREFIX} Downloaded ${GITHUB_RELEASE_ASSET_NAME} to ${restorePath}`);
 	} else {
-		info("Using cached phpstan.phar, restored to " + restorePath);
+		info(`${ACTION_OUT_PREFIX} Using cached ${GITHUB_RELEASE_ASSET_NAME}, restored to ${restorePath}`);
 	}
 
 	return restorePath;
@@ -98,14 +106,14 @@ export async function run(): Promise<void> {
 	const gitHubApi = new RestOctokit();
 
 	const release = await findVersion(gitHubApi, getInput("version"));
-	const asset = findAsset(release.assets, "phpstan.phar");
-	info(`Using target version ${release.tag_name} released @ ${release.published_at}`);
+	const asset = findAsset(release.assets, GITHUB_RELEASE_ASSET_NAME);
+	info(`${ACTION_OUT_PREFIX} Using target version ${release.tag_name} released @ ${release.published_at}`);
 
 	const restorePath = path.resolve(getInput("install-path"));
-	const cacheKey = `setup-phpstan-v1.1-${release.tag_name}-${asset.id}-` + restorePath.replace(/\//g, "-") + "-phpstan.phar";
+	const cacheKey = `setup-phpstan-v${ACTION_VERSION}-${release.tag_name}-${asset.id}-${restorePath.replace(/\//g, "-")}-${GITHUB_RELEASE_ASSET_NAME}`;
 
 	fs.mkdirSync(restorePath, { recursive: true });
-	let phpStanBin = await install(release.id, asset, restorePath, cacheKey) + "phpstan.phar";
+	let phpStanBin = await install(release.id, asset, restorePath, cacheKey) + GITHUB_RELEASE_ASSET_NAME;
 
 	setOutput("phpstan", phpStanBin)
 	addPath(path.dirname(phpStanBin))
