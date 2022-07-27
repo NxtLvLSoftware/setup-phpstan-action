@@ -81,7 +81,7 @@ function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"][
 async function copyExecutable(executablePath: string, restorePath: string) : Promise<void> {
 	const fileType = executablePath.split(".").pop();
 	const fileName = fileType.split("/").pop();
-	if (fileType != "phar" && (fileType != "phpstan" || fileName != "phpstan")) {
+	if (executablePath == "undefined" || (fileType != "phar" && (fileType != "phpstan" || fileName != "phpstan"))) {
 		throw new Error(`${executablePath} does not appear to be a phpstan executable`);
 	}
 
@@ -154,7 +154,7 @@ export async function run(): Promise<void> {
 		await copyExecutable(executablePath, restorePath);
 		info(`${ACTION_OUT_PREFIX} Using provided phpstan executable '${executablePath}'`);
 	} catch (err) {
-		if (executablePath != "phpstan") {
+		if (executablePath != "undefined") {
 			info(`${ACTION_OUT_PREFIX} Provided executable could not be found, falling back to target version ${release.tag_name} released @ ${release.published_at}`);
 		} else {
 			info(`${ACTION_OUT_PREFIX} Using target version ${release.tag_name} released @ ${release.published_at}`);

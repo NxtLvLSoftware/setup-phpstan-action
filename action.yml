@@ -16,7 +16,7 @@ inputs:
     description: |
       Path to an existing PHPStan installation.
     required: false
-    default: "phpstan"
+    default: "undefined"
 
 outputs:
   phpstan:
