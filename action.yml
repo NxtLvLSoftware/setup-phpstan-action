@@ -9,20 +9,21 @@ inputs:
 
       Possible values:
       - exact versions (8.0.11, 7.4.24, etc.)
+      - latest
     required: false
     default: latest
   path:
     description: |
       Path to an existing PHPStan installation.
     required: false
-    default: ""
+    default: "phpstan"
 
 outputs:
   phpstan:
     description: Path to PHPStan executable
 
 name: Setup PHPStan
-description: GitHub action for setting up PHPStan in an actions enviroment.
+description: GitHub action for setting up PHPStan in an actions environment.
 author: NxtLvLSoftware Solutions
 branding:
   icon: settings

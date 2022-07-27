@@ -15,41 +15,33 @@ GitHub action for installing PHPStan in actions workflows.
 Either `version` or `path` must be specified.
 
 ## How to use
-Build (or attempt to download) any PHP release by providing the version:
+Attempt to download any PHPStan release by providing the version:
 
 ```yml
-name: My PHP Workflow
+name: My PHPStan Workflow
 on: [push]
 jobs:
-  setup-php:
+  setup-phpstan:
     name: Setup PHPStan
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: nxtlvlsoftware/setup-phpstan@v1
         with:
-          version: 1.4.10
-      - run: |
-        echo "phpstan version 1.4.10 installed to ${{ outputs.phpstan }}"
+          version: '1.8.2'
+          install-path: './bin'
 ```
 
 Or provide the path to an existing PHPStan installation/binary:
 ```yml
-name: My PHP Workflow
+name: My PHPStan Workflow
 on: [push]
 jobs:
-  setup-php:
-    name: Setup PHP
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+  setup-phpstan:
+    name: Setup PHPStan
+    runs-on: ubuntu-latest
     steps:
       - uses: nxtlvlsoftware/setup-phpstan@v1
         with:
           path: 'path/to/your/phpstan.phar'
-      - run: |
-        echo "existing phpstan installation from ${{ outputs.phpstan }} added to path"
+          install-path: './bin'
 ```

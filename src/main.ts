@@ -1,7 +1,7 @@
 import {addPath, info, getInput, setFailed, setOutput} from "@actions/core"
-import { Octokit } from "@octokit/action";
-import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
-import { downloadRelease } from "@terascope/fetch-github-release";
+import {Octokit} from "@octokit/action";
+import {restEndpointMethods} from "@octokit/plugin-rest-endpoint-methods";
+import {downloadRelease} from "@terascope/fetch-github-release";
 import {RestEndpointMethodTypes} from "@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types";
 import * as cache from "@actions/cache"
 import * as path from "path"
@@ -29,20 +29,20 @@ async function findVersion(gitHubApi: Octokit, target: string): Promise<RestEndp
 			tag: target
 		});
 
-		if(response.status !== 200) {
+		if (response.status !== 200) {
 			throw new Error(`Could not find a ${GITHUB_REPO_OWNER}/${GITHUB_REPO} release with tag '${target}'`);
 		}
 
 		return response.data;
 	}
 
-	if(target.toLowerCase() === "latest") {
+	if (target.toLowerCase() === "latest") {
 		const response = await gitHubApi.rest.repos.getLatestRelease({
 			owner: GITHUB_REPO_OWNER,
 			repo: GITHUB_REPO
 		});
 
-		if(response.status !== 200) {
+		if (response.status !== 200) {
 			throw new Error(`Could not find latest ${GITHUB_REPO_OWNER}/${GITHUB_REPO} release`);
 		}
 
@@ -60,16 +60,48 @@ type ReleaseAsset = RestEndpointMethodTypes["repos"]["getLatestRelease"]["respon
  * @param assets
  * @param file
  */
-function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"]["response"]["data"]["assets"], file: string) : ReleaseAsset {
+function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"]["response"]["data"]["assets"], file: string): ReleaseAsset {
 	const found = assets.find((asset, index) => {
 		return asset.name === file;
 	});
 
-	if(found === undefined) {
+	if (found === undefined) {
 		throw new Error(`Could not find ${file} asset in release`);
 	}
 
 	return found;
+}
+
+/**
+ * Copy a phpstan.phar to the install path.
+ *
+ * @param executablePath
+ * @param restorePath
+ */
+async function copyExecutable(executablePath: string, restorePath: string) : Promise<void> {
+	const fileType = executablePath.split(".").pop();
+	const fileName = fileType.split("/").pop();
+	if (fileType != "phar" && (fileType != "phpstan" || fileName != "phpstan")) {
+		throw new Error(`${executablePath} does not appear to be a phpstan executable`);
+	}
+
+	await fs.access(executablePath, fs.constants.R_OK, (err) => {
+		if (err) {
+			throw new Error(`${executablePath} is not readable`);
+		}
+	});
+
+	await fs.access(executablePath, fs.constants.X_OK, (err) => {
+		if (err) {
+			throw new Error(`${executablePath} is not executable`);
+		}
+	});
+
+	await fs.copyFile(executablePath, restorePath, (err) => {
+		if(err) {
+			throw new Error(`Could not copy '${executablePath}' to '${restorePath}'. ${err.message}`);
+		}
+	});
 }
 
 /**
@@ -78,14 +110,15 @@ function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"][
  * @param releaseId
  * @param asset
  * @param restorePath
+ * @param cacheKey
  */
-async function install(releaseId: number, asset: ReleaseAsset, restorePath: string, cacheKey: string) : Promise<string> {
+async function install(releaseId: number, asset: ReleaseAsset, restorePath: string, cacheKey: string): Promise<string> {
 	const hitKey = await cache.restoreCache([restorePath], cacheKey);
 
 	if (hitKey === undefined) {
-		await downloadRelease(GITHUB_REPO_OWNER, GITHUB_REPO, restorePath, (release) : boolean => {
+		await downloadRelease(GITHUB_REPO_OWNER, GITHUB_REPO, restorePath, (release): boolean => {
 			return release.id === releaseId;
-		}, (releaseAsset) : boolean => {
+		}, (releaseAsset): boolean => {
 			return releaseAsset.id === asset.id;
 		}, false, false);
 
@@ -107,16 +140,31 @@ export async function run(): Promise<void> {
 
 	const release = await findVersion(gitHubApi, getInput("version"));
 	const asset = findAsset(release.assets, GITHUB_RELEASE_ASSET_NAME);
-	info(`${ACTION_OUT_PREFIX} Using target version ${release.tag_name} released @ ${release.published_at}`);
 
-	const restorePath = path.resolve(getInput("install-path"));
-	const cacheKey = `setup-phpstan-v${ACTION_VERSION}-${release.tag_name}-${asset.id}-${restorePath.replace(/\//g, "-")}-${GITHUB_RELEASE_ASSET_NAME}`;
+	const restorePath = path.normalize(getInput("install-path"));
+	await fs.mkdir(restorePath, {recursive: true}, (err) => {
+		if (err) {
+			throw new Error(`${ACTION_OUT_PREFIX} Could not create install directory. ${err.message}`);
+		}
+	});
 
-	fs.mkdirSync(restorePath, { recursive: true });
-	let phpStanBin = await install(release.id, asset, restorePath, cacheKey) + GITHUB_RELEASE_ASSET_NAME;
+	const executablePath = path.normalize(getInput("path"));
+	let phpStanBin: string;
+	try {
+		await copyExecutable(executablePath, restorePath);
+		info(`${ACTION_OUT_PREFIX} Using provided phpstan executable '${executablePath}'`);
+	} catch (err) {
+		if (executablePath != "phpstan") {
+			info(`${ACTION_OUT_PREFIX} Provided executable could not be found, falling back to target version ${release.tag_name} released @ ${release.published_at}`);
+		} else {
+			info(`${ACTION_OUT_PREFIX} Using target version ${release.tag_name} released @ ${release.published_at}`);
+		}
+		const cacheKey = `setup-phpstan-v${ACTION_VERSION}-${release.tag_name}-${asset.id}-${restorePath.replace(/\//g, "-")}-${GITHUB_RELEASE_ASSET_NAME}`;
+		phpStanBin = await install(release.id, asset, restorePath, cacheKey) + GITHUB_RELEASE_ASSET_NAME;
+	}
 
-	setOutput("phpstan", phpStanBin)
-	addPath(path.dirname(phpStanBin))
+	setOutput("phpstan", phpStanBin);
+	addPath(path.dirname(phpStanBin));
 }
 
 ;(async () => {
