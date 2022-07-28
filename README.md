@@ -1,6 +1,6 @@
 # Action nxtlvlsoftware/setup-phpstan
 
-GitHub action for installing PHPStan in actions workflows.
+GitHub action for installing [PHPStan](https://github.com/phpstan/phpstan) in actions workflows.
 
 - [x] Allows passing version string and installing from github releases into path/env.
 - [x] Allows passing existing executable path and installing into path/env.
