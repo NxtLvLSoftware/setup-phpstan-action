@@ -29,5 +29,5 @@ branding:
   icon: settings
   color: blue
 runs:
-  using: node12
+  using: node16
   main: dist/main.js
