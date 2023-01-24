@@ -78,10 +78,11 @@ function findAsset(assets: RestEndpointMethodTypes["repos"]["getLatestRelease"][
  * @param executablePath
  * @param restorePath
  */
-async function copyExecutable(executablePath: string, restorePath: string) : Promise<void> {
-	const fileType = executablePath.split(".").pop();
-	const fileName = fileType.split("/").pop();
-	if (executablePath == "undefined" || (fileType != "phar" && (fileType != "phpstan" || fileName != "phpstan"))) {
+async function copyExecutable(executablePath: string, restorePath: string) : Promise<string> {
+	const nameParts = executablePath.split(".");
+	const fileType = nameParts.pop() ?? "";
+	const fileName = nameParts.pop()?.split("/").pop() ?? "";
+	if (executablePath == "undefined" || (fileType.toLowerCase() !== "phpstan" || !(fileType.toLowerCase() === "phar" && fileName.toLowerCase() === "phpstan"))) {
 		throw new Error(`${executablePath} does not appear to be a phpstan executable`);
 	}
 
@@ -102,6 +103,8 @@ async function copyExecutable(executablePath: string, restorePath: string) : Pro
 			throw new Error(`Could not copy '${executablePath}' to '${restorePath}'. ${err.message}`);
 		}
 	});
+
+	return restorePath;
 }
 
 /**
@@ -151,7 +154,7 @@ export async function run(): Promise<void> {
 	const executablePath = path.normalize(getInput("path"));
 	let phpStanBin: string;
 	try {
-		await copyExecutable(executablePath, restorePath);
+		phpStanBin = await copyExecutable(executablePath, restorePath);
 		info(`${ACTION_OUT_PREFIX} Using provided phpstan executable '${executablePath}'`);
 	} catch (err) {
 		if (executablePath != "undefined") {
