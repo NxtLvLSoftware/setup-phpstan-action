@@ -47,4 +47,4 @@ jobs:
 ```
 
 ## License
-`nxtlvlsoftware/tar-ops-action` is open-sourced software licensed under the [MIT license](LICENSE).
+`nxtlvlsoftware/setup-phpstan-action` is open-sourced software licensed under the [MIT license](LICENSE).
