@@ -45,3 +45,6 @@ jobs:
           path: 'path/to/your/phpstan.phar'
           install-path: './bin'
 ```
+
+## License
+`nxtlvlsoftware/tar-ops-action` is open-sourced software licensed under the [MIT license](LICENSE).
