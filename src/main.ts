@@ -82,7 +82,7 @@ async function copyExecutable(executablePath: string, restorePath: string) : Pro
 	const nameParts = executablePath.split(".");
 	const fileType = nameParts.pop() ?? "";
 	const fileName = nameParts.pop()?.split("/").pop() ?? "";
-	if (typeof executablePath === undefined || (fileType.toLowerCase() !== "phpstan" && (fileType.toLowerCase() === "phar" && fileName.toLowerCase() !== "phpstan"))) {
+	if (executablePath == "undefined" || (fileType.toLowerCase() !== "phpstan" || !(fileType.toLowerCase() === "phar" && fileName.toLowerCase() === "phpstan"))) {
 		throw new Error(`${executablePath} does not appear to be a phpstan executable`);
 	}
 
