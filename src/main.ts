@@ -1,5 +1,6 @@
 import {addPath, info, getInput, setFailed, setOutput} from "@actions/core"
 import {Octokit} from "@octokit/action";
+const { createActionAuth } = require("@octokit/auth-action");
 import {restEndpointMethods} from "@octokit/plugin-rest-endpoint-methods";
 import {downloadRelease} from "@terascope/fetch-github-release";
 import {RestEndpointMethodTypes} from "@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types";
@@ -139,7 +140,8 @@ async function install(releaseId: number, asset: ReleaseAsset, restorePath: stri
  */
 export async function run(): Promise<void> {
 	const RestOctokit = Octokit.plugin(restEndpointMethods);
-	const gitHubApi = new RestOctokit();
+	const auth = createActionAuth();
+	const gitHubApi = new RestOctokit({ auth: await auth() });
 
 	const release = await findVersion(gitHubApi, getInput("version"));
 	const asset = findAsset(release.assets, GITHUB_RELEASE_ASSET_NAME);
