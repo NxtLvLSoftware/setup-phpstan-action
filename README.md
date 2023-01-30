@@ -26,10 +26,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: nxtlvlsoftware/setup-phpstan-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           version: '1.8.2'
           install-path: './bin'
 ```
+
+Forwarding the `$GIHUB_TOKEN` environment variable is required to properly configure PHPStan as we
+interact with the GitHub API to fetch version information.
 
 Or provide the path to an existing PHPStan installation/binary:
 ```yml
@@ -41,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: nxtlvlsoftware/setup-phpstan-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           path: 'path/to/your/phpstan.phar'
           install-path: './bin'
